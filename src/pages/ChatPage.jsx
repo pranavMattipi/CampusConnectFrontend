@@ -42,48 +42,62 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // ✅ Always fetch colleges from backend
+  // ✅ Load chats from localStorage OR fetch from backend if not available
   useEffect(() => {
-    const fetchColleges = async () => {
-      try {
-        const res = await axios.get("http://localhost:8000/api/colleges");
-        const colleges = res.data;
+    const savedChats = localStorage.getItem("chats");
+    if (savedChats) {
+      const parsed = JSON.parse(savedChats);
+      setChats(parsed);
+      if (parsed.length > 0) setSelectedId(parsed[0].id);
+    } else {
+      const fetchColleges = async () => {
+        try {
+          const res = await axios.get("http://localhost:8000/api/colleges");
+          const colleges = res.data;
 
-        const mappedChats = colleges.map((college) => ({
-          id: college._id,
-          name: college.name,
-          group: true,
-          lastSeen: "online",
-          avatar: college.name
-            .split(" ")
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase(),
-          pinned: false,
-          muted: false,
-          favorite: false,
-          unread: Math.floor(Math.random() * 5),
-          messages: [
-            {
-              id: 1,
-              from: "them",
-              text: `${college.name} events and updates will appear here soon! 🎉`,
-              time: "12:00",
-              date: "Today",
-            },
-          ],
-        }));
+          const mappedChats = colleges.map((college) => ({
+            id: college._id,
+            name: college.name,
+            group: true,
+            lastSeen: "online",
+            avatar: college.name
+              .split(" ")
+              .map((w) => w[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase(),
+            pinned: false,
+            muted: false,
+            favorite: false,
+            unread: Math.floor(Math.random() * 5),
+            messages: [
+              {
+                id: 1,
+                from: "them",
+                text: `${college.name} events and updates will appear here soon! 🎉`,
+                time: "12:00",
+                date: "Today",
+              },
+            ],
+          }));
 
-        setChats(mappedChats);
-        if (mappedChats.length > 0) setSelectedId(mappedChats[0].id);
-      } catch (err) {
-        console.error("Error fetching colleges:", err);
-      }
-    };
+          setChats(mappedChats);
+          if (mappedChats.length > 0) setSelectedId(mappedChats[0].id);
+        } catch (err) {
+          console.error("Error fetching colleges:", err);
+        }
+      };
 
-    fetchColleges();
+      fetchColleges();
+    }
   }, []);
+
+  // ✅ Save chats to localStorage whenever they change
+  useEffect(() => {
+    if (chats.length > 0) {
+      localStorage.setItem("chats", JSON.stringify(chats));
+    }
+  }, [chats]);
 
   const selectedChat = chats.find((c) => c.id === selectedId);
 
@@ -123,7 +137,7 @@ export default function ChatPage() {
     setMessage("");
   };
 
-  // ✅ Delete message
+  // ✅ Delete message and persist
   const handleDeleteMessage = (chatId, msgId) => {
     setChats((prev) =>
       prev.map((chat) =>
