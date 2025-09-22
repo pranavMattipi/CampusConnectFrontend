@@ -29,19 +29,35 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const states = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-    "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
-    "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim",
-    "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
-    "West Bengal"
+    "Mumbai",
+    "Delhi",
+    "Bangalore",
+    "Chennai",
+    "Hyderabad",
+    "Pune",
+    "Kolkata",
+    "Ahmedabad",
+    "Jaipur",
+    "Lucknow",
+    "Indore",
+    "Bhopal",
+    "Chandigarh",
+    "Coimbatore",
+    "Nagpur",
+    "Visakhapatnam",
+    "Patna",
+    "Kanpur",
+    "Surat",
+    "Thiruvananthapuram",
   ];
 
   // 📌 Fetch colleges + login check
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/colleges");
+        const res = await fetch(
+          "https://campusconnectstartup-2ioq.onrender.com/api/colleges"
+        );
         const data = await res.json();
         setColleges(data);
       } catch (err) {
@@ -55,50 +71,56 @@ const Navbar = () => {
     if (name) setStudentName(name);
   }, []);
 
-  // 📌 Fetch events when typing
+  // 📌 Fetch events dynamically as user types
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
+      setShowSearchDropdown(false);
       return;
     }
+
     const fetchEvents = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/events?search=${searchQuery}`
+          `https://campusconnectstartup-2ioq.onrender.com/api/events?search=${searchQuery}`
         );
         const data = await res.json();
-        setSearchResults(data.data || []); // ✅ use array inside { success, data }
+
+        // ✅ Sort results alphabetically by title
+        const sorted = (data.data || []).sort((a, b) =>
+          a.title.localeCompare(b.title)
+        );
+
+        setSearchResults(sorted);
         setShowSearchDropdown(true);
       } catch (err) {
         console.error("Error fetching events:", err);
       }
     };
-    const delayDebounce = setTimeout(fetchEvents, 300); // debounce
+
+    const delayDebounce = setTimeout(fetchEvents, 300); // debounce typing
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
   // 📌 Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        (stateDropdownRef.current &&
-          !stateDropdownRef.current.contains(event.target)) &&
-        (collegeDropdownRef.current &&
-          !collegeDropdownRef.current.contains(event.target)) &&
-        (guestDropdownRef.current &&
-          !guestDropdownRef.current.contains(event.target)) &&
-        (searchDropdownRef.current &&
-          !searchDropdownRef.current.contains(event.target))
-      ) {
+      if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target)) {
         setStateDropdownOpen(false);
+      }
+      if (collegeDropdownRef.current && !collegeDropdownRef.current.contains(event.target)) {
         setCollegeDropdownOpen(false);
+      }
+      if (guestDropdownRef.current && !guestDropdownRef.current.contains(event.target)) {
         setGuestDropdownOpen(false);
+      }
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target)) {
         setShowSearchDropdown(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // ✅ Logout handler
@@ -166,7 +188,7 @@ const Navbar = () => {
                 key={event._id}
                 className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                 onClick={() => {
-                  navigate(`/Individual/${event._id}`); // ✅ FIX: match route
+                  navigate(`/Individual/${event._id}`);
                   setSearchQuery("");
                   setShowSearchDropdown(false);
                 }}
@@ -187,7 +209,11 @@ const Navbar = () => {
         <div ref={stateDropdownRef} className="relative">
           <div
             className="flex items-center gap-1 cursor-pointer"
-            onClick={() => setStateDropdownOpen(!stateDropdownOpen)}
+            onClick={() => {
+              setStateDropdownOpen(!stateDropdownOpen);
+              setGuestDropdownOpen(false);
+              setCollegeDropdownOpen(false);
+            }}
           >
             {selectedState} <span className="text-xs">▼</span>
           </div>
@@ -213,7 +239,11 @@ const Navbar = () => {
         <div ref={guestDropdownRef} className="relative">
           <div
             className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setGuestDropdownOpen(!guestDropdownOpen)}
+            onClick={() => {
+              setGuestDropdownOpen(!guestDropdownOpen);
+              setStateDropdownOpen(false);
+              setCollegeDropdownOpen(false);
+            }}
           >
             <FaUser /> Hi, {studentName || "Guest"}{" "}
             <span className="text-xs">▼</span>
