@@ -8,23 +8,24 @@ const AllEventsPage = () => {
   const { events, setEvents } = useEventStore();
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/events`); // ✅ Use full backend URL
-        if (!res.ok) {
-          throw new Error(`Failed to fetch events: ${res.status}`);
-        }
-
-        const data = await res.json();
-        const eventList = Array.isArray(data) ? data : data.data || [];
-        setEvents(eventList);
-      } catch (error) {
-        console.error("Error fetching events:", error);
+  const fetchEvents = async () => {
+    try {
+      console.log("Fetching events from:", `${API_BASE_URL}/api/events`);
+      const res = await fetch(`${API_BASE_URL}/api/events`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch events: ${res.status}`);
       }
-    };
 
-    fetchEvents();
-  }, [setEvents]);
+      const data = await res.json();
+      const eventList = Array.isArray(data) ? data : data.data || [];
+      setEvents(eventList);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  fetchEvents();
+}, [setEvents]);
 
   return (
     <div className="min-h-screen py-12 px-6 bg-white">
