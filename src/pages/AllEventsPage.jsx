@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useEventStore } from "../store/events";
+import { API_BASE_URL } from "../config"; // ✅ Import API_BASE_URL
 
 const AllEventsPage = () => {
   const { events, setEvents } = useEventStore();
@@ -9,10 +10,12 @@ const AllEventsPage = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await fetch("/api/events");
-        const data = await res.json();
+        const res = await fetch(`${API_BASE_URL}/api/events`); // ✅ Use full backend URL
+        if (!res.ok) {
+          throw new Error(`Failed to fetch events: ${res.status}`);
+        }
 
-        // Handle both { data: [...] } and just [...]
+        const data = await res.json();
         const eventList = Array.isArray(data) ? data : data.data || [];
         setEvents(eventList);
       } catch (error) {
@@ -32,7 +35,6 @@ const AllEventsPage = () => {
         All Upcoming Events and Clubs
       </h1>
 
-      {/* Events Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {events.length === 0 ? (
           <p className="text-center text-gray-500 col-span-full">
@@ -55,19 +57,18 @@ const AllEventsPage = () => {
                 <h2 className="text-lg font-semibold text-gray-800 mb-2">
                   {event.title}
                 </h2>
-               
-                
+
                 <p className="text-sm text-gray-500 mb-4">
                   📅 {event.date ? new Date(event.date).toLocaleDateString() : "No date"} <br />
                   📍 {event.location || "No location"}
                 </p>
-                {/* Dynamic Link */}
+                
                 <Link
-                                   to={`/Individual/${event._id}`}
-                                   className="mt-auto bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-                                 >
-                                   View Details
-                                 </Link>
+                  to={`/Individual/${event._id}`}
+                  className="mt-auto bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+                >
+                  View Details
+                </Link>
               </div>
             </div>
           ))
