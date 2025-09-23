@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { API_BASE_URL } from "../config";
 
 export const useEventStore = create((set) => ({
   events: [],
@@ -6,10 +7,10 @@ export const useEventStore = create((set) => ({
 
   createEvent: async (newEvent) => {
     try {
-      const res = await fetch("http://localhost:8000/api/events", {
+      const res = await fetch(`${API_BASE_URL}/api/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEvent)
+        body: JSON.stringify(newEvent),
       });
 
       const data = await res.json();
@@ -25,5 +26,5 @@ export const useEventStore = create((set) => ({
       console.error("Error creating event:", error);
       return { success: false, message: "Server error. Please try again later." };
     }
-  }
+  },
 }));
