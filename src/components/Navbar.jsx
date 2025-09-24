@@ -200,7 +200,7 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Right Options */}
+      {/* Right Options (Desktop) */}
       <div
         className="hidden md:flex items-center gap-6 font-semibold relative text-white"
         style={{ fontFamily: "Jost, sans-serif" }}
@@ -276,6 +276,72 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Dropdown Menu */}
+      {menuOpen && (
+        <div className="absolute top-16 left-0 w-full bg-white text-black shadow-lg z-50 flex flex-col gap-4 p-4 md:hidden">
+          {/* State Dropdown */}
+          <div>
+            <div
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setStateDropdownOpen(!stateDropdownOpen)}
+            >
+              {selectedState} <span>▼</span>
+            </div>
+            {stateDropdownOpen && (
+              <div className="mt-2 bg-gray-100 rounded shadow-md">
+                {states.map((state) => (
+                  <div
+                    key={state}
+                    className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                    onClick={() => {
+                      setSelectedState(state);
+                      setStateDropdownOpen(false);
+                    }}
+                  >
+                    {state}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Hi, Guest / User Dropdown */}
+          <div>
+            <div
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setGuestDropdownOpen(!guestDropdownOpen)}
+            >
+              <FaUser /> Hi, {studentName || "Guest"} <span>▼</span>
+            </div>
+            {guestDropdownOpen && (
+              <div className="mt-2 bg-gray-100 rounded shadow-md">
+                {!studentName ? (
+                  <Link to="/LogSign">
+                    <div className="px-4 py-2 hover:bg-gray-200 cursor-pointer">
+                      Login
+                    </div>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/profile">
+                      <div className="px-4 py-2 hover:bg-gray-200 cursor-pointer">
+                        Profile
+                      </div>
+                    </Link>
+                    <div
+                      className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
