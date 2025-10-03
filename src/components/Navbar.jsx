@@ -245,7 +245,7 @@ const Navbar = () => {
               setCollegeDropdownOpen(false);
             }}
           >
-            <FaUser /> Hi, {studentName || "Guest"}{" "}
+            <FaUser /> {studentName || "Log-in here"}{" "}
             <span className="text-xs">▼</span>
           </div>
 
