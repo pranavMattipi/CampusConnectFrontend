@@ -26,6 +26,7 @@ const IndividualPage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
+      {/* Event Banner and Info */}
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden mb-12">
         <img
           src={event.image}
@@ -34,6 +35,8 @@ const IndividualPage = () => {
         />
         <div className="p-6">
           <h1 className="text-4xl font-bold mb-4">{event.title}</h1>
+
+          {/* Highlights */}
           <div className="flex flex-wrap gap-2 mb-4">
             {event.highlights.map((tag, idx) => (
               <span
@@ -44,6 +47,8 @@ const IndividualPage = () => {
               </span>
             ))}
           </div>
+
+          {/* Date, Time, Location */}
           <div className="text-gray-700 mb-6 space-y-1">
             <p>
               <strong>Date:</strong> {event.date}
@@ -55,28 +60,26 @@ const IndividualPage = () => {
               <strong>Location:</strong> {event.location}
             </p>
           </div>
+
+          {/* Buttons */}
           <div className="flex gap-4">
-           <Link
-  to={`/BookTicket/${event._id}`}
-  className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition"
->
-  🎟 Book Tickets
-</Link>
             <Link
-              to={`/Review`}
-              className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition"
+              to={`/BookTicket/${event._id}`}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition"
             >
-              ⭐ Read Reviews
+              🎟 Book Tickets
             </Link>
           </div>
         </div>
       </div>
 
+      {/* About Section */}
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 mb-12">
         <h2 className="text-2xl font-semibold mb-4">About the Event</h2>
         <p className="text-gray-600 leading-relaxed">{event.description}</p>
       </div>
 
+      {/* Organizer Info */}
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 flex items-center gap-4 mb-12">
         <img
           src={event.organizerLogo}
@@ -89,6 +92,7 @@ const IndividualPage = () => {
         </div>
       </div>
 
+      {/* Cast Members */}
       {event.castMembers?.length > 0 && (
         <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 mb-12">
           <h2 className="text-2xl font-semibold mb-6">Cast</h2>

@@ -7,6 +7,7 @@ const PostEventPage = () => {
     title: "",
     description: "",
     image: "",
+    qrImage: "", // ✅ New QR image field
     date: "",
     time: "",
     location: "",
@@ -29,7 +30,7 @@ const PostEventPage = () => {
     setErrors({ ...errors, [e.target.name]: "" }); // Clear error when typing
   };
 
-  // Image file upload
+  // Image file upload (main image)
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -46,10 +47,34 @@ const PostEventPage = () => {
         ...prev,
         image: res.data.imageUrl,
       }));
-      alert("Image uploaded successfully!");
+      alert("Main image uploaded successfully!");
     } catch (error) {
       console.error("Image upload failed", error);
       alert("Failed to upload image.");
+    }
+  };
+
+  // ✅ QR image upload
+  const handleQrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", file);
+
+    try {
+      const res = await axios.post("http://localhost:8000/api/upload", formDataUpload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        qrImage: res.data.imageUrl,
+      }));
+      alert("QR Image uploaded successfully!");
+    } catch (error) {
+      console.error("QR upload failed", error);
+      alert("Failed to upload QR image.");
     }
   };
 
@@ -127,12 +152,12 @@ const PostEventPage = () => {
           className="border p-2 w-full"
         />
 
-        {/* Image upload */}
+        {/* Main Image upload */}
         <div>
           <input
             type="text"
             name="image"
-            placeholder="Image URL"
+            placeholder="Main Image URL"
             value={formData.image}
             onChange={handleChange}
             className="border p-2 w-full mb-2"
@@ -147,6 +172,31 @@ const PostEventPage = () => {
             <img
               src={formData.image}
               alt="Preview"
+              className="mt-2 w-32 h-32 object-cover rounded"
+            />
+          )}
+        </div>
+
+        {/* ✅ QR Image Upload */}
+        <div>
+          <input
+            type="text"
+            name="qrImage"
+            placeholder="QR Image URL"
+            value={formData.qrImage}
+            onChange={handleChange}
+            className="border p-2 w-full mb-2"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleQrUpload}
+            className="border p-2 w-full"
+          />
+          {formData.qrImage && (
+            <img
+              src={formData.qrImage}
+              alt="QR Preview"
               className="mt-2 w-32 h-32 object-cover rounded"
             />
           )}
