@@ -115,9 +115,12 @@ export default function ChatPage() {
   const handleSend = () => {
     if (!message.trim() || !selectedChat) return;
 
+    // current logged-in user
+    const currentUser = localStorage.getItem("currentUser") || "Pranav";
+
     const newMessage = {
       id: Date.now(),
-      from: "me",
+      from: currentUser,
       text: message,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
@@ -351,45 +354,53 @@ export default function ChatPage() {
                         .includes(searchInChat.toLowerCase())
                     : true
                 )
-                .map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex group ${
-                      msg.from === "me" ? "justify-end" : "justify-start"
-                    }`}
-                  >
+                .map((msg) => {
+                  const currentUser =
+                    localStorage.getItem("currentUser") || "Pranav";
+                  const isMyMessage = msg.from === currentUser;
+
+                  return (
                     <div
-                      className={`relative max-w-xs px-3 py-2 rounded-lg text-sm ${
-                        msg.from === "me"
-                          ? "bg-purple-500 text-white"
-                          : darkMode
-                          ? "bg-gray-800"
-                          : "bg-gray-200"
+                      key={msg.id}
+                      className={`flex group ${
+                        isMyMessage ? "justify-end" : "justify-start"
                       }`}
                     >
-                      {msg.text}
-                      <div className="text-[10px] text-right opacity-70 mt-1">
-                        {msg.time}{" "}
-                        {msg.from === "me" &&
-                          (msg.status === "sent" ? (
-                            <Check size={11} className="inline ml-1" />
-                          ) : msg.status === "delivered" ? (
-                            <CheckCheck size={11} className="inline ml-1" />
-                          ) : null)}
-                      </div>
+                      <div
+                        className={`relative max-w-xs px-3 py-2 rounded-lg text-sm ${
+                          isMyMessage
+                            ? "bg-purple-500 text-white"
+                            : darkMode
+                            ? "bg-gray-800 text-gray-100"
+                            : "bg-gray-200 text-gray-900"
+                        }`}
+                      >
+                        {msg.text}
+                        <div className="text-[10px] text-right opacity-70 mt-1">
+                          {msg.time}{" "}
+                          {isMyMessage &&
+                            (msg.status === "sent" ? (
+                              <Check size={11} className="inline ml-1" />
+                            ) : msg.status === "delivered" ? (
+                              <CheckCheck size={11} className="inline ml-1" />
+                            ) : null)}
+                        </div>
 
-                      {/* ✅ Delete button */}
-                      {msg.from === "me" && (
-                        <button
-                          onClick={() => handleDeleteMessage(selectedChat.id, msg.id)}
-                          className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      )}
+                        {/* ✅ Delete button */}
+                        {isMyMessage && (
+                          <button
+                            onClick={() =>
+                              handleDeleteMessage(selectedChat.id, msg.id)
+                            }
+                            className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               <div ref={messagesEndRef} />
             </div>
 
