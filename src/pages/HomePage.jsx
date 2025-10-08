@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import bg1 from "../assets/view-futuristic-dj-booth.jpg";
@@ -11,17 +11,18 @@ const HomePage = () => {
   const [current, setCurrent] = useState(0);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const navigate = useNavigate();
 
-  const nextSlide = () => {
-    setCurrent((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
+  const eventsScrollRef = useRef(null);
+  const categoriesScrollRef = useRef(null);
 
-  const prevSlide = () => {
-    setCurrent((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
 
+  const nextSlide = () => setCurrent((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  const prevSlide = () => setCurrent((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+
+  // Fetch events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -36,27 +37,56 @@ const HomePage = () => {
     fetchEvents();
   }, []);
 
-  // Auto-scroll carousel
+  // Auto-scroll carousel every 5s
   useEffect(() => {
     const interval = setInterval(nextSlide, 5000);
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // ✅ Handle View Details with login check
-  const handleViewDetails = (eventId) => {
+  // Login check helper
+  const requireLogin = (redirectPath) => {
     const studentName = localStorage.getItem("studentName");
     if (!studentName) {
-      // Redirect to login page and pass redirect URL
-      navigate(`/LogSign?redirect=/Individual/${eventId}`);
-      return;
+      navigate(`/LogSign?redirect=${redirectPath}`);
+      return false;
     }
+    return true;
+  };
+
+  const handleViewDetails = (eventId) => {
+    if (!requireLogin(`/Individual/${eventId}`)) return;
     navigate(`/Individual/${eventId}`);
+  };
+
+  const handleExploreEvents = () => {
+    if (!requireLogin("/AllEvents")) return;
+    navigate("/AllEvents");
+  };
+
+  // Touch handlers for mobile carousel swipe
+  const handleTouchStart = (e) => setTouchStartX(e.touches[0].clientX);
+  const handleTouchEnd = () => {
+    if (touchStartX - touchEndX > 50) nextSlide(); // swipe left
+    if (touchStartX - touchEndX < -50) prevSlide(); // swipe right
+  };
+  const handleTouchMove = (e) => setTouchEndX(e.touches[0].clientX);
+
+  // Swipe scroll for events/categories
+  const handleSwipeScroll = (ref, deltaX) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: deltaX, behavior: "smooth" });
+    }
   };
 
   return (
     <div>
       {/* Full-screen Carousel */}
-      <div className="relative w-full h-[80vh] sm:h-[90vh] md:h-screen overflow-hidden">
+      <div
+        className="relative w-full h-[80vh] sm:h-[90vh] md:h-screen overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <img
           src={images[current]}
           alt="carousel"
@@ -70,12 +100,12 @@ const HomePage = () => {
           <p className="text-sm sm:text-lg md:text-2xl max-w-2xl">
             Discover events, clubs, and parties happening around you — join the fun today!
           </p>
-          <Link
-            to="/AllEvents"
+          <button
+            onClick={handleExploreEvents}
             className="mt-6 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg text-sm sm:text-lg font-semibold transition"
           >
             Explore Events
-          </Link>
+          </button>
         </div>
         <button
           onClick={prevSlide}
@@ -93,16 +123,14 @@ const HomePage = () => {
 
       {/* Events Section */}
       <div className="bg-white py-8 sm:py-12 px-4 sm:px-6 relative">
-        <Link
-          to="/AllEvents"
-          className="inline-flex items-center gap-2 hover:text-purple-600 transition"
+        <div
+          className="inline-flex items-center gap-2 hover:text-purple-600 transition cursor-pointer"
+          onClick={handleExploreEvents}
         >
-          <div className="flex space-x-2.5">
-            <h2 className="text-black text-2xl sm:text-3xl font-bold mb-6">
-              Upcoming Events and Clubs
-            </h2>
-          </div>
-        </Link>
+          <h2 className="text-black text-2xl sm:text-3xl font-bold mb-6">
+            Upcoming Events and Clubs
+          </h2>
+        </div>
 
         {loading ? (
           <p className="text-center text-gray-500">Loading events...</p>
@@ -110,11 +138,7 @@ const HomePage = () => {
           <div className="relative">
             {/* Left Arrow */}
             <button
-              onClick={() =>
-                document
-                  .getElementById("eventsScroll")
-                  .scrollBy({ left: -300, behavior: "smooth" })
-              }
+              onClick={() => handleSwipeScroll(eventsScrollRef, -300)}
               className="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 z-10 hover:bg-gray-100"
             >
               ◀
@@ -123,13 +147,15 @@ const HomePage = () => {
             {/* Scrollable Row */}
             <div
               id="eventsScroll"
+              ref={eventsScrollRef}
               className="flex gap-4 sm:gap-6 overflow-x-auto overflow-y-hidden scroll-smooth px-10 py-6 no-scrollbar"
             >
               {events.slice(0, 8).map((event) => (
                 <div
                   key={event._id}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 hover:rounded-xl transition duration-300 h-full flex flex-col flex-shrink-0"
+                  className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 hover:rounded-xl transition duration-300 h-full flex flex-col flex-shrink-0 cursor-pointer"
                   style={{ minWidth: "260px", maxWidth: "300px" }}
+                  onClick={() => handleViewDetails(event._id)}
                 >
                   <img
                     src={event.image || bg1}
@@ -141,11 +167,7 @@ const HomePage = () => {
                       {event.title}
                     </h2>
                     <p className="text-sm text-gray-500 mb-4">
-                      📅{" "}
-                      {event.date
-                        ? new Date(event.date).toLocaleDateString()
-                        : "No date"}{" "}
-                      <br />
+                      📅 {event.date ? new Date(event.date).toLocaleDateString() : "No date"} <br />
                       📍 {event.location || "No location"}
                     </p>
                     <button
@@ -158,23 +180,18 @@ const HomePage = () => {
                 </div>
               ))}
 
-              {/* See All Card */}
-              <Link
-                to="/AllEvents"
-                className="bg-purple-100 rounded-xl shadow-lg flex items-center justify-center text-purple-700 font-semibold text-lg flex-shrink-0"
+              <div
+                onClick={handleExploreEvents}
+                className="bg-purple-100 rounded-xl shadow-lg flex items-center justify-center text-purple-700 font-semibold text-lg flex-shrink-0 cursor-pointer"
                 style={{ minWidth: "260px", maxWidth: "300px" }}
               >
                 See All Events →
-              </Link>
+              </div>
             </div>
 
             {/* Right Arrow */}
             <button
-              onClick={() =>
-                document
-                  .getElementById("eventsScroll")
-                  .scrollBy({ left: 300, behavior: "smooth" })
-              }
+              onClick={() => handleSwipeScroll(eventsScrollRef, 300)}
               className="absolute right-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 z-10 hover:bg-gray-100"
             >
               ▶
@@ -183,38 +200,27 @@ const HomePage = () => {
         )}
       </div>
 
-      {/* The Best of Live Events */}
+      {/* The Best of Live Events / Categories */}
       <div
         className="py-8 px-4 sm:px-6"
-        style={{
-          background: "linear-gradient(to right, #2E005F, #5B00B7, #7E00E0)",
-        }}
+        style={{ background: "linear-gradient(to right, #2E005F, #5B00B7, #7E00E0)" }}
       >
         <h2 className="text-white text-2xl sm:text-3xl font-bold mb-6">
           The Best of Live Events
         </h2>
 
         <div className="relative">
-          {/* Left Scroll Button */}
           <button
-            onClick={() =>
-              document
-                .getElementById("categoriesScroll")
-                .scrollBy({ left: -300, behavior: "smooth" })
-            }
+            onClick={() => handleSwipeScroll(categoriesScrollRef, -220)}
             className="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 z-10 hover:bg-gray-100"
           >
             ◀
           </button>
 
-          {/* Scrollable Categories Row */}
           <div
             id="categoriesScroll"
+            ref={categoriesScrollRef}
             className="flex gap-6 overflow-x-auto scroll-smooth px-10 py-4 no-scrollbar"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
           >
             {[
               { name: "Sports", gradient: "linear-gradient(135deg, #f87171, #ef4444, #b91c1c)" },
@@ -229,11 +235,7 @@ const HomePage = () => {
               <div
                 key={idx}
                 className="flex items-center justify-center rounded-xl shadow-lg text-white font-bold text-xl flex-shrink-0 cursor-pointer transform hover:scale-105 transition"
-                style={{
-                  minWidth: "220px",
-                  height: "150px",
-                  background: cat.gradient,
-                }}
+                style={{ minWidth: "220px", height: "150px", background: cat.gradient }}
               >
                 {cat.name}
               </div>
@@ -248,13 +250,8 @@ const HomePage = () => {
             `}
           </style>
 
-          {/* Right Scroll Button */}
           <button
-            onClick={() =>
-              document
-                .getElementById("categoriesScroll")
-                .scrollBy({ left: 300, behavior: "smooth" })
-            }
+            onClick={() => handleSwipeScroll(categoriesScrollRef, 220)}
             className="absolute right-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 z-10 hover:bg-gray-100"
           >
             ▶
@@ -262,34 +259,19 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* ⭐ Trending Now Banner */}
+      {/* Trending Now */}
       {events.length > 0 && (
         <div className="mt-10 px-6 mb-10">
-          <h2 className="text-black text-2xl sm:text-3xl font-bold mb-4">
-            🔥Trending Now
-          </h2>
-
+          <h2 className="text-black text-2xl sm:text-3xl font-bold mb-4">🔥Trending Now</h2>
           <div className="relative w-full h-80 overflow-hidden rounded-2xl shadow-lg">
-            <img
-              src={events[0].image || bg1}
-              alt={events[0].title}
-              className="w-full h-full object-cover"
-            />
+            <img src={events[0].image || bg1} alt={events[0].title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent flex flex-col justify-center p-8">
-              <h2 className="text-3xl font-bold text-white mb-3">
-                {events[0].title || "Trending Event"}
-              </h2>
+              <h2 className="text-3xl font-bold text-white mb-3">{events[0].title || "Trending Event"}</h2>
               <p className="text-gray-200 text-sm mb-4">
-                📅{" "}
-                {events[0].date
-                  ? new Date(events[0].date).toLocaleDateString()
-                  : "Date TBA"}{" "}
-                • {events[0].city || "Location TBA"}{" "}
-                {events[0].highlights
-                  ? `| 🎶 ${events[0].highlights.join(" | ")}`
-                  : ""}
+                📅 {events[0].date ? new Date(events[0].date).toLocaleDateString() : "Date TBA"} •{" "}
+                {events[0].city || "Location TBA"}{" "}
+                {events[0].highlights ? `| 🎶 ${events[0].highlights.join(" | ")}` : ""}
               </p>
-
               <button
                 onClick={() => handleViewDetails(events[0]._id)}
                 className="w-fit bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium shadow-md"
