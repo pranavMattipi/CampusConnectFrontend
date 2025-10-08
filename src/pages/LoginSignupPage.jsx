@@ -62,7 +62,7 @@ const LoginSignupPane = () => {
       <div className="flex flex-1 items-center justify-center px-4 bg-black/40">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
-            College Login
+           Login in order to continue ...
           </h2>
 
           {error && <p className="text-red-500 mb-4 text-center">{error}</p>}

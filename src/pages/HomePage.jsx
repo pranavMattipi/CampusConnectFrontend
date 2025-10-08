@@ -1,4 +1,3 @@
-// src/pages/HomePage.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -37,20 +36,18 @@ const HomePage = () => {
     fetchEvents();
   }, []);
 
-  // 🔥 Auto-scroll timer for carousel
+  // Auto-scroll carousel
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrent((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-    }, 5000);
+    const interval = setInterval(nextSlide, 5000);
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // ✅ Function to check login before navigating
+  // ✅ Handle View Details with login check
   const handleViewDetails = (eventId) => {
     const studentName = localStorage.getItem("studentName");
     if (!studentName) {
-      alert("Please log in to view event details.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Redirect to login page and pass redirect URL
+      navigate(`/LogSign?redirect=/Individual/${eventId}`);
       return;
     }
     navigate(`/Individual/${eventId}`);
@@ -151,7 +148,6 @@ const HomePage = () => {
                       <br />
                       📍 {event.location || "No location"}
                     </p>
-                    {/* ✅ Modified Button */}
                     <button
                       onClick={() => handleViewDetails(event._id)}
                       className="mt-auto bg-purple-600 text-white px-3 py-2 rounded-lg text-sm sm:text-base hover:bg-purple-700 transition"
@@ -275,7 +271,7 @@ const HomePage = () => {
 
           <div className="relative w-full h-80 overflow-hidden rounded-2xl shadow-lg">
             <img
-              src={events[0].image || "https://images.unsplash.com/photo-1561484930-998b6a6f7d4b"}
+              src={events[0].image || bg1}
               alt={events[0].title}
               className="w-full h-full object-cover"
             />
@@ -294,7 +290,6 @@ const HomePage = () => {
                   : ""}
               </p>
 
-              {/* ✅ Added Login Check here */}
               <button
                 onClick={() => handleViewDetails(events[0]._id)}
                 className="w-fit bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium shadow-md"

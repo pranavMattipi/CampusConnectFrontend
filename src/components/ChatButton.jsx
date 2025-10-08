@@ -1,4 +1,3 @@
-// src/components/ChatButton.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle } from "lucide-react"; // Chat icon
@@ -10,11 +9,8 @@ const ChatButton = () => {
     const studentName = localStorage.getItem("studentName");
 
     if (!studentName) {
-      // Show alert first
-      alert("Please log in to access the chat.");
-
-      // Scroll to top AFTER user clicks OK
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Redirect to login page
+      navigate("/LogSign");
       return;
     }
 
