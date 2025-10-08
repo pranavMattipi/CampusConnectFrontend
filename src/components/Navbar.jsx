@@ -13,10 +13,8 @@ const Navbar = () => {
   const [colleges, setColleges] = useState([]);
   const [selectedCollege, setSelectedCollege] = useState("Select College");
 
-  // ✅ Track logged-in user
   const [studentName, setStudentName] = useState(null);
 
-  // ✅ Search states
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -51,7 +49,6 @@ const Navbar = () => {
     "Thiruvananthapuram",
   ];
 
-  // 📌 Fetch colleges + login check
   useEffect(() => {
     const fetchColleges = async () => {
       try {
@@ -66,12 +63,10 @@ const Navbar = () => {
     };
     fetchColleges();
 
-    // ✅ Check if user is logged in
     const name = localStorage.getItem("studentName");
     if (name) setStudentName(name);
   }, []);
 
-  // 📌 Fetch events dynamically as user types
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -85,12 +80,9 @@ const Navbar = () => {
           `https://campusconnectstartup-2ioq.onrender.com/api/events?search=${searchQuery}`
         );
         const data = await res.json();
-
-        // ✅ Sort results alphabetically by title
         const sorted = (data.data || []).sort((a, b) =>
           a.title.localeCompare(b.title)
         );
-
         setSearchResults(sorted);
         setShowSearchDropdown(true);
       } catch (err) {
@@ -98,11 +90,11 @@ const Navbar = () => {
       }
     };
 
-    const delayDebounce = setTimeout(fetchEvents, 300); // debounce typing
+    const delayDebounce = setTimeout(fetchEvents, 300);
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  // 📌 Close dropdowns on outside click
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target)) {
@@ -123,7 +115,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ Logout handler
   const handleLogout = () => {
     localStorage.removeItem("studentName");
     localStorage.removeItem("studentId");
@@ -158,12 +149,16 @@ const Navbar = () => {
       {/* Mobile Menu Button */}
       <div
         className="md:hidden text-white text-2xl cursor-pointer"
-        onClick={() => setMenuOpen(!menuOpen)}
+        onClick={() => {
+          setMenuOpen(!menuOpen);
+          setStateDropdownOpen(false);
+          setGuestDropdownOpen(false);
+        }}
       >
         {menuOpen ? <FaTimes /> : <FaBars />}
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar (Desktop) */}
       <div
         className="hidden md:flex items-center bg-white rounded-full px-3 py-2 w-[700px] max-w-full relative"
         ref={searchDropdownRef}
@@ -175,12 +170,9 @@ const Navbar = () => {
           className="flex-grow text-gray-700 outline-none text-sm"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() =>
-            searchResults.length > 0 && setShowSearchDropdown(true)
-          }
+          onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
         />
 
-        {/* Dropdown Results */}
         {showSearchDropdown && searchResults.length > 0 && (
           <div className="absolute top-12 left-0 bg-white shadow-lg rounded-lg w-full max-h-60 overflow-y-auto z-50">
             {searchResults.map((event) => (
@@ -212,7 +204,6 @@ const Navbar = () => {
             onClick={() => {
               setStateDropdownOpen(!stateDropdownOpen);
               setGuestDropdownOpen(false);
-              setCollegeDropdownOpen(false);
             }}
           >
             {selectedState} <span className="text-xs">▼</span>
@@ -242,7 +233,6 @@ const Navbar = () => {
             onClick={() => {
               setGuestDropdownOpen(!guestDropdownOpen);
               setStateDropdownOpen(false);
-              setCollegeDropdownOpen(false);
             }}
           >
             <FaUser /> {studentName || "Log-in here"}{" "}
@@ -277,14 +267,17 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* ✅ Mobile Dropdown Menu (Fixed) */}
       {menuOpen && (
         <div className="absolute top-16 left-0 w-full bg-white text-black shadow-lg z-50 flex flex-col gap-4 p-4 md:hidden">
           {/* State Dropdown */}
-          <div>
+          <div ref={stateDropdownRef}>
             <div
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setStateDropdownOpen(!stateDropdownOpen)}
+              className="flex items-center justify-between cursor-pointer font-semibold"
+              onClick={() => {
+                setStateDropdownOpen(!stateDropdownOpen);
+                setGuestDropdownOpen(false);
+              }}
             >
               {selectedState} <span>▼</span>
             </div>
@@ -307,24 +300,28 @@ const Navbar = () => {
           </div>
 
           {/* Hi, Guest / User Dropdown */}
-          <div>
+          <div ref={guestDropdownRef}>
             <div
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setGuestDropdownOpen(!guestDropdownOpen)}
+              className="flex items-center justify-between cursor-pointer font-semibold"
+              onClick={() => {
+                setGuestDropdownOpen(!guestDropdownOpen);
+                setStateDropdownOpen(false);
+              }}
             >
-              <FaUser /> Hi, {studentName || "Guest"} <span>▼</span>
+              <FaUser /> {studentName ? `Hi, ${studentName}` : "Log-in here"}{" "}
+              <span>▼</span>
             </div>
             {guestDropdownOpen && (
               <div className="mt-2 bg-gray-100 rounded shadow-md">
                 {!studentName ? (
-                  <Link to="/LogSign">
+                  <Link to="/LogSign" onClick={() => setMenuOpen(false)}>
                     <div className="px-4 py-2 hover:bg-gray-200 cursor-pointer">
                       Login
                     </div>
                   </Link>
                 ) : (
                   <>
-                    <Link to="/profile">
+                    <Link to="/profile" onClick={() => setMenuOpen(false)}>
                       <div className="px-4 py-2 hover:bg-gray-200 cursor-pointer">
                         Profile
                       </div>
