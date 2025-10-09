@@ -1,19 +1,21 @@
-// src/pages/LoginSignupPage.jsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import loginimage from "../assets/loginimage.jpg"; // ✅ Import background image
+import loginimage from "../assets/loginimage.jpg";
 
-const LoginSignupPane = () => {
+const LoginSignupPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [error, setError] = useState("");
+
+  const redirectTo = new URLSearchParams(location.search).get("redirect") || "/";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,24 +31,20 @@ const LoginSignupPane = () => {
     }
 
     try {
-      // ✅ Login API call
       const res = await axios.post("http://localhost:8000/api/auth/login", {
         email: formData.email,
         password: formData.password,
       });
 
-      // ✅ Save student details in localStorage
       localStorage.setItem("studentToken", res.data.token);
       localStorage.setItem("studentId", res.data.studentId);
       localStorage.setItem("studentName", res.data.name);
       localStorage.setItem("collegeName", res.data.college.name);
 
-      // ✅ Toast notification
       toast.success("Successfully logged in!");
 
-      // ✅ Redirect to homepage after short delay (so toast shows)
       setTimeout(() => {
-        navigate("/");
+        navigate(redirectTo);
       }, 1500);
     } catch (err) {
       console.error(err.response?.data);
@@ -57,18 +55,17 @@ const LoginSignupPane = () => {
   return (
     <div
       className="flex flex-col min-h-screen bg-gray-50 bg-cover bg-center"
-      style={{ backgroundImage: `url(${loginimage})` }} // ✅ Background image added
+      style={{ backgroundImage: `url(${loginimage})` }}
     >
       <div className="flex flex-1 items-center justify-center px-4 bg-black/40">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
-           Login in order to continue ...
+            College Login
           </h2>
 
           {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
                 College Email
@@ -84,7 +81,6 @@ const LoginSignupPane = () => {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
                 College Password
@@ -100,7 +96,6 @@ const LoginSignupPane = () => {
               />
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
@@ -111,31 +106,19 @@ const LoginSignupPane = () => {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="bg-white shadow-inner py-4">
         <div className="max-w-4xl mx-auto flex flex-wrap justify-center space-x-6 text-sm text-gray-600">
-          <Link to="/PrivacyPolicy" className="hover:text-purple-600">
-            Privacy Policy
-          </Link>
-          <Link to="/terms" className="hover:text-purple-600">
-            Terms of Service
-          </Link>
-          <Link to="/support" className="hover:text-purple-600">
-            Support
-          </Link>
-          <Link to="/contact" className="hover:text-purple-600">
-            Contact Us
-          </Link>
-          <Link to="/faq" className="hover:text-purple-600">
-            FAQ
-          </Link>
+          <Link to="/PrivacyPolicy" className="hover:text-purple-600">Privacy Policy</Link>
+          <Link to="/terms" className="hover:text-purple-600">Terms of Service</Link>
+          <Link to="/support" className="hover:text-purple-600">Support</Link>
+          <Link to="/contact" className="hover:text-purple-600">Contact Us</Link>
+          <Link to="/faq" className="hover:text-purple-600">FAQ</Link>
         </div>
       </footer>
 
-      {/* Toast container */}
       <ToastContainer position="top-center" autoClose={1500} />
     </div>
   );
 };
 
-export default LoginSignupPane;
+export default LoginSignupPage;
