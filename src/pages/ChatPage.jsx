@@ -45,9 +45,7 @@ export default function ChatPage() {
 
   // ✅ Load chats from localStorage OR fetch from backend if not available
   useEffect(() => {
-    const currentUser = localStorage.getItem("studentId") || "anonymous";
-    const userChatsKey = `chats_${currentUser}`;
-    const savedChats = localStorage.getItem(userChatsKey);
+    const savedChats = localStorage.getItem("chats");
     if (savedChats) {
       const parsed = JSON.parse(savedChats);
       setChats(parsed);
@@ -98,9 +96,7 @@ export default function ChatPage() {
   // ✅ Save chats to localStorage whenever they change
   useEffect(() => {
     if (chats.length > 0) {
-      const currentUser = localStorage.getItem("studentId") || "anonymous";
-      const userChatsKey = `chats_${currentUser}`;
-      localStorage.setItem(userChatsKey, JSON.stringify(chats));
+      localStorage.setItem("chats", JSON.stringify(chats));
     }
   }, [chats]);
 
@@ -367,21 +363,30 @@ export default function ChatPage() {
                   return (
                     <div
                       key={msg.id}
-                      className={`flex group ${
-                        isMyMessage ? "justify-end" : "justify-start"
+                      className={`flex flex-col group ${
+                        isMyMessage ? "items-end" : "items-start"
                       }`}
                     >
+                      {/* Show sender name for other people's messages */}
+                      {!isMyMessage && (
+                        <span className="text-xs text-gray-500 mb-1 px-2">
+                          {msg.from}
+                        </span>
+                      )}
+                      
                       <div
                         className={`relative max-w-xs px-3 py-2 rounded-lg text-sm ${
                           isMyMessage
-                            ? "bg-purple-500 text-white"
+                            ? "bg-purple-500 text-white rounded-br-sm"
                             : darkMode
-                            ? "bg-gray-800 text-gray-100"
-                            : "bg-gray-200 text-gray-900"
+                            ? "bg-gray-700 text-gray-100 rounded-bl-sm"
+                            : "bg-gray-200 text-gray-900 rounded-bl-sm"
                         }`}
                       >
                         {msg.text}
-                        <div className="text-[10px] text-right opacity-70 mt-1">
+                        <div className={`text-[10px] opacity-70 mt-1 ${
+                          isMyMessage ? "text-right" : "text-left"
+                        }`}>
                           {msg.time}{" "}
                           {isMyMessage &&
                             (msg.status === "sent" ? (
