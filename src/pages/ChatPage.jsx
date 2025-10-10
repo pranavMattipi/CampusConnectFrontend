@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 import {
   Search,
   MoreVertical,
@@ -44,7 +45,9 @@ export default function ChatPage() {
 
   // ✅ Load chats from localStorage OR fetch from backend if not available
   useEffect(() => {
-    const savedChats = localStorage.getItem("chats");
+    const currentUser = localStorage.getItem("studentId") || "anonymous";
+    const userChatsKey = `chats_${currentUser}`;
+    const savedChats = localStorage.getItem(userChatsKey);
     if (savedChats) {
       const parsed = JSON.parse(savedChats);
       setChats(parsed);
@@ -52,7 +55,7 @@ export default function ChatPage() {
     } else {
       const fetchColleges = async () => {
         try {
-          const res = await axios.get("http://localhost:8000/api/colleges");
+          const res = await axios.get(`${API_BASE_URL}/api/colleges`);
           const colleges = res.data;
 
           const mappedChats = colleges.map((college) => ({
@@ -95,7 +98,9 @@ export default function ChatPage() {
   // ✅ Save chats to localStorage whenever they change
   useEffect(() => {
     if (chats.length > 0) {
-      localStorage.setItem("chats", JSON.stringify(chats));
+      const currentUser = localStorage.getItem("studentId") || "anonymous";
+      const userChatsKey = `chats_${currentUser}`;
+      localStorage.setItem(userChatsKey, JSON.stringify(chats));
     }
   }, [chats]);
 
@@ -116,7 +121,7 @@ export default function ChatPage() {
     if (!message.trim() || !selectedChat) return;
 
     // current logged-in user
-    const currentUser = localStorage.getItem("currentUser") || "Pranav";
+    const currentUser = localStorage.getItem("studentName") || localStorage.getItem("studentId") || "Anonymous";
 
     const newMessage = {
       id: Date.now(),
@@ -356,7 +361,7 @@ export default function ChatPage() {
                 )
                 .map((msg) => {
                   const currentUser =
-                    localStorage.getItem("currentUser") || "Pranav";
+                    localStorage.getItem("studentName") || localStorage.getItem("studentId") || "Anonymous";
                   const isMyMessage = msg.from === currentUser;
 
                   return (
