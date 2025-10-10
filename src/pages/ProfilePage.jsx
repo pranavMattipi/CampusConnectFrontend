@@ -1,11 +1,13 @@
-// src/pages/ProfilePage.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 
 const ProfilePage = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStudent = async () => {
@@ -13,30 +15,70 @@ const ProfilePage = () => {
         setLoading(true);
         setError("");
 
-        // 🔹 Replace this with actual logged-in student's studentId or hardcode for now
-        const loggedInStudentId = "S1756400179340";
+        const loggedInStudentId = localStorage.getItem("studentId");
 
-        const response = await axios.get("http://localhost:8000/api/students");
-        const allStudents = response.data;
+        console.log("🔍 Fetching profile for:", loggedInStudentId);
 
-        // Find the student by studentId
-        const studentData = allStudents.find(
-          (s) => s.studentId === loggedInStudentId
-        );
+        if (!loggedInStudentId) {
+          setError("Please log in to view your profile");
+          setLoading(false);
+          setTimeout(() => navigate("/LogSign"), 2000);
+          return;
+        }
+
+        let studentData = null;
+
+        // Try to fetch by custom studentId first (like "S1756400179340")
+        if (loggedInStudentId.startsWith('S')) {
+          try {
+            const response = await axios.get(`${API_BASE_URL}/api/students/studentId/${loggedInStudentId}`);
+            studentData = response.data;
+          } catch (err) {
+            console.log("Failed to fetch by custom studentId, trying by MongoDB _id");
+          }
+        }
+
+        // If not found by custom studentId, try by MongoDB _id
+        if (!studentData) {
+          try {
+            const response = await axios.get(`${API_BASE_URL}/api/students/${loggedInStudentId}`);
+            studentData = response.data;
+          } catch (err) {
+            console.log("Failed to fetch by MongoDB _id");
+          }
+        }
+
+        // If still not found, try fetching all students and finding by studentId
+        if (!studentData) {
+          try {
+            const response = await axios.get(`${API_BASE_URL}/api/students`);
+            const allStudents = response.data;
+            studentData = allStudents.find(s => s.studentId === loggedInStudentId);
+          } catch (err) {
+            console.log("Failed to fetch all students");
+          }
+        }
 
         if (!studentData) {
-          setError("Student not found");
-        } else {
-          // Convert year number to display string
-          studentData.year = `${studentData.year} ${
-            studentData.year === 1 ? "st" : studentData.year === 2 ? "nd" : studentData.year === 3 ? "rd" : "th"
-          } Year`;
-
-          setStudent(studentData);
+          setError("Student not found. Please try logging in again.");
+          return;
         }
+
+        // Convert year to readable format
+        studentData.year = `${studentData.year} ${
+          studentData.year === 1
+            ? "st"
+            : studentData.year === 2
+            ? "nd"
+            : studentData.year === 3
+            ? "rd"
+            : "th"
+        } Year`;
+
+        setStudent(studentData);
       } catch (err) {
         console.error("Error fetching student:", err.response || err.message);
-        setError("Failed to load profile. Check console.");
+        setError("Failed to load profile. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -45,28 +87,26 @@ const ProfilePage = () => {
     fetchStudent();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500 text-lg animate-pulse">Loading profile...</p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-red-500 text-lg">{error}</p>
       </div>
     );
-  }
 
   if (!student) return null;
 
   return (
     <div className="min-h-screen py-12 px-6 bg-gray-50">
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Gradient Header with Avatar */}
+        {/* Gradient Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 h-40 relative">
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-1/2">
             <img
@@ -84,27 +124,17 @@ const ProfilePage = () => {
 
         {/* Profile Info */}
         <div className="pt-20 pb-10 px-8 text-center">
-          <h1
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
-          >
-            {student.name}
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">{student.name}</h1>
           <p className="text-gray-500 text-lg mb-6">{student.branch}</p>
 
-          {/* Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             <ProfileField label="Roll Number" value={student.rollNumber} />
             <ProfileField label="Student ID" value={student.studentId} />
             <ProfileField label="Year" value={student.year} />
             <ProfileField label="Email" value={student.email} />
-            <ProfileField
-              label="College"
-              value={student.college?.name || "Unknown"}
-            />
+            <ProfileField label="College" value={student.college?.name || "Unknown"} />
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-10 flex justify-center space-x-4">
             <button className="px-5 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition">
               Edit Profile

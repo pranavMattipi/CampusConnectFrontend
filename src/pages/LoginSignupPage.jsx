@@ -37,10 +37,18 @@ const LoginSignupPage = () => {
         password: formData.password,
       });
 
+      console.log("🔍 Debug Login Response:", res.data);
+
       localStorage.setItem("studentToken", res.data.token);
       localStorage.setItem("studentId", res.data.studentId);
       localStorage.setItem("studentName", res.data.name);
       localStorage.setItem("collegeName", res.data.college.name);
+
+      console.log("🔍 Debug localStorage after login:");
+      console.log("  - studentToken:", res.data.token);
+      console.log("  - studentId:", res.data.studentId);
+      console.log("  - studentName:", res.data.name);
+      console.log("  - collegeName:", res.data.college.name);
 
       toast.success("Successfully logged in!");
 

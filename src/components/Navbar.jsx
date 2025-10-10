@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaSearch, FaUser, FaBars, FaTimes } from "react-icons/fa";
 import "@fontsource/jost";
+import { API_BASE_URL } from "../config";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,9 +36,7 @@ const Navbar = () => {
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const res = await fetch(
-          "https://campusconnectstartup-2ioq.onrender.com/api/colleges"
-        );
+        const res = await fetch(`${API_BASE_URL}/api/colleges`);
         const data = await res.json();
         setColleges(data);
       } catch (err) {
@@ -63,7 +62,7 @@ const Navbar = () => {
     const fetchEvents = async () => {
       try {
         const res = await fetch(
-          `https://campusconnectstartup-2ioq.onrender.com/api/events?search=${searchQuery}`
+          `${API_BASE_URL}/api/events?search=${searchQuery}`
         );
         const data = await res.json();
         const sorted = (data.data || []).sort((a, b) =>
