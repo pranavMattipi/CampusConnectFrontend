@@ -7,6 +7,7 @@ const ProfilePage = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,6 +65,13 @@ const ProfilePage = () => {
           return;
         }
 
+        // Check if user has a saved profile photo
+        const studentId = localStorage.getItem('studentId');
+        const savedPhoto = localStorage.getItem(`profilePhoto_${studentId}`);
+        if (savedPhoto) {
+          studentData.avatar = savedPhoto;
+        }
+
         // Convert year to readable format
         studentData.year = `${studentData.year} ${
           studentData.year === 1
@@ -87,6 +95,68 @@ const ProfilePage = () => {
     fetchStudent();
   }, []);
 
+  // Handle photo upload
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('studentId', localStorage.getItem('studentId'));
+
+      // Convert image to base64 and save to localStorage
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const photoDataUrl = e.target.result;
+        
+        // Save photo URL to localStorage with user-specific key
+        const studentId = localStorage.getItem('studentId');
+        localStorage.setItem(`profilePhoto_${studentId}`, photoDataUrl);
+        
+        // Update local state
+        setStudent(prev => ({
+          ...prev,
+          avatar: photoDataUrl
+        }));
+        
+        setUploading(false);
+        console.log('Photo uploaded and saved successfully');
+      };
+      reader.readAsDataURL(file);
+
+    } catch (err) {
+      setError('Failed to upload photo. Please try again.');
+      setUploading(false);
+    }
+  };
+
+  // Function to remove profile photo (for future use)
+  const removeProfilePhoto = () => {
+    const studentId = localStorage.getItem('studentId');
+    localStorage.removeItem(`profilePhoto_${studentId}`);
+    
+    setStudent(prev => ({
+      ...prev,
+      avatar: null
+    }));
+  };
+
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -109,16 +179,54 @@ const ProfilePage = () => {
         {/* Gradient Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 h-40 relative">
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-1/2">
-            <img
-              src={
-                student.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  student.name
-                )}&background=6d28d9&color=fff&size=128`
-              }
-              alt={student.name}
-              className="w-28 h-28 rounded-full border-4 border-white shadow-lg"
-            />
+            <div className="relative group cursor-pointer">
+              <img
+                src={
+                  student.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    student.name
+                  )}&background=6d28d9&color=fff&size=128`
+                }
+                alt={student.name}
+                className="w-28 h-28 rounded-full border-4 border-white shadow-lg transition-all duration-300"
+              />
+              
+              {/* Small camera icon in bottom-right corner */}
+              <div className="absolute -bottom-1 -right-1 bg-purple-600 hover:bg-purple-700 rounded-full p-2 shadow-lg transition-all duration-300 group-hover:scale-110">
+                {uploading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg 
+                    className="w-4 h-4 text-white" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" 
+                    />
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" 
+                    />
+                  </svg>
+                )}
+              </div>
+              
+              {/* Hidden file input */}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={uploading}
+              />
+            </div>
           </div>
         </div>
 
@@ -135,14 +243,6 @@ const ProfilePage = () => {
             <ProfileField label="College" value={student.college?.name || "Unknown"} />
           </div>
 
-          <div className="mt-10 flex justify-center space-x-4">
-            <button className="px-5 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition">
-              Edit Profile
-            </button>
-            <button className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition">
-              Settings
-            </button>
-          </div>
         </div>
       </div>
     </div>
