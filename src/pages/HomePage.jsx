@@ -26,7 +26,8 @@ const HomePage = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/events");
+        // const res = await axios.get("http://localhost:8000/api/events");
+        const res = await axios.get(`${API_BASE_URL}/api/events`);
         setEvents(res.data.data || []);
       } catch (error) {
         console.error("❌ Error fetching events:", error);

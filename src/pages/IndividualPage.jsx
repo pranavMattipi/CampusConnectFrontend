@@ -11,6 +11,7 @@ const IndividualPage = () => {
     const fetchEvent = async () => {
       try {
         const res = await axios.get(`http://localhost:8000/api/events/${id}`);
+        
         setEvent(res.data.data);
         setLoading(false);
       } catch (error) {
