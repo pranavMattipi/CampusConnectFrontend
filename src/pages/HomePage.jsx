@@ -19,16 +19,23 @@ const HomePage = () => {
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchEndX, setTouchEndX] = useState(0);
 
-  const nextSlide = () => setCurrent((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  const prevSlide = () => setCurrent((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+  // Carousel controls
+  const nextSlide = () =>
+    setCurrent((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  const prevSlide = () =>
+    setCurrent((prev) => (prev === 0 ? images.length - 1 : prev - 1));
 
   // Fetch events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // const res = await axios.get("http://localhost:8000/api/events");
+        console.log("Fetching events from:", `${API_BASE_URL}/api/events`);
         const res = await axios.get(`${API_BASE_URL}/api/events`);
-        setEvents(res.data.data || []);
+        console.log("✅ Events fetched:", res.data);
+        setEvents(res.data.data || res.data || []);
       } catch (error) {
         console.error("❌ Error fetching events:", error);
       } finally {
@@ -44,7 +51,7 @@ const HomePage = () => {
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // Login check helper
+  // Login check
   const requireLogin = (redirectPath) => {
     const studentName = localStorage.getItem("studentName");
     if (!studentName) {
@@ -64,15 +71,15 @@ const HomePage = () => {
     navigate("/AllEvents");
   };
 
-  // Touch handlers for mobile carousel swipe
+  // Touch handlers for mobile carousel
   const handleTouchStart = (e) => setTouchStartX(e.touches[0].clientX);
+  const handleTouchMove = (e) => setTouchEndX(e.touches[0].clientX);
   const handleTouchEnd = () => {
     if (touchStartX - touchEndX > 50) nextSlide(); // swipe left
     if (touchStartX - touchEndX < -50) prevSlide(); // swipe right
   };
-  const handleTouchMove = (e) => setTouchEndX(e.touches[0].clientX);
 
-  // Swipe scroll for events/categories
+  // Horizontal scroll for events and categories
   const handleSwipeScroll = (ref, deltaX) => {
     if (ref.current) {
       ref.current.scrollBy({ left: deltaX, behavior: "smooth" });
@@ -81,7 +88,7 @@ const HomePage = () => {
 
   return (
     <div>
-      {/* Full-screen Carousel */}
+      {/* Fullscreen Carousel */}
       <div
         className="relative w-full h-[80vh] sm:h-[90vh] md:h-screen overflow-hidden"
         onTouchStart={handleTouchStart}
@@ -99,7 +106,8 @@ const HomePage = () => {
             Welcome to CampusConnect
           </h1>
           <p className="text-sm sm:text-lg md:text-2xl max-w-2xl">
-            Discover events, clubs, and parties happening around you — join the fun today!
+            Discover events, clubs, and parties happening around you — join the
+            fun today!
           </p>
           <button
             onClick={handleExploreEvents}
@@ -122,7 +130,7 @@ const HomePage = () => {
         </button>
       </div>
 
-      {/* Events Section */}
+      {/* Upcoming Events */}
       <div className="bg-white py-8 sm:py-12 px-4 sm:px-6 relative">
         <div
           className="inline-flex items-center gap-2 hover:text-purple-600 transition cursor-pointer"
@@ -137,7 +145,7 @@ const HomePage = () => {
           <p className="text-center text-gray-500">Loading events...</p>
         ) : (
           <div className="relative">
-            {/* Left Arrow */}
+            {/* Left arrow */}
             <button
               onClick={() => handleSwipeScroll(eventsScrollRef, -300)}
               className="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 z-10 hover:bg-gray-100"
@@ -145,41 +153,50 @@ const HomePage = () => {
               ◀
             </button>
 
-            {/* Scrollable Row */}
             <div
               id="eventsScroll"
               ref={eventsScrollRef}
               className="flex gap-4 sm:gap-6 overflow-x-auto overflow-y-hidden scroll-smooth px-10 py-6 no-scrollbar"
             >
-              {events.slice(0, 8).map((event) => (
-                <div
-                  key={event._id}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 hover:rounded-xl transition duration-300 h-full flex flex-col flex-shrink-0 cursor-pointer"
-                  style={{ minWidth: "260px", maxWidth: "300px" }}
-                  onClick={() => handleViewDetails(event._id)}
-                >
-                  <img
-                    src={event.image || bg1}
-                    alt={event.title}
-                    className="w-full h-full sm:h-80 object-cover"
-                  />
-                  <div className="p-3 sm:p-4 flex flex-col flex-grow">
-                    <h2 className="text-md sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2">
-                      {event.title}
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-4">
-                      📅 {event.date ? new Date(event.date).toLocaleDateString() : "No date"} <br />
-                      📍 {event.location || "No location"}
-                    </p>
-                    <button
-                      onClick={() => handleViewDetails(event._id)}
-                      className="mt-auto bg-purple-600 text-white px-3 py-2 rounded-lg text-sm sm:text-base hover:bg-purple-700 transition"
-                    >
-                      View Details
-                    </button>
+              {events.length === 0 ? (
+                <p className="text-gray-500 text-center w-full">
+                  No events available
+                </p>
+              ) : (
+                events.slice(0, 8).map((event) => (
+                  <div
+                    key={event._id}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 hover:rounded-xl transition duration-300 h-full flex flex-col flex-shrink-0 cursor-pointer"
+                    style={{ minWidth: "260px", maxWidth: "300px" }}
+                    onClick={() => handleViewDetails(event._id)}
+                  >
+                    <img
+                      src={event.image || bg1}
+                      alt={event.title}
+                      className="w-full h-60 sm:h-80 object-cover"
+                    />
+                    <div className="p-3 sm:p-4 flex flex-col flex-grow">
+                      <h2 className="text-md sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2">
+                        {event.title}
+                      </h2>
+                      <p className="text-sm text-gray-500 mb-4">
+                        📅{" "}
+                        {event.date
+                          ? new Date(event.date).toLocaleDateString()
+                          : "No date"}{" "}
+                        <br />
+                        📍 {event.location || "No location"}
+                      </p>
+                      <button
+                        onClick={() => handleViewDetails(event._id)}
+                        className="mt-auto bg-purple-600 text-white px-3 py-2 rounded-lg text-sm sm:text-base hover:bg-purple-700 transition"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
 
               <div
                 onClick={handleExploreEvents}
@@ -190,7 +207,7 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Right Arrow */}
+            {/* Right arrow */}
             <button
               onClick={() => handleSwipeScroll(eventsScrollRef, 300)}
               className="absolute right-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 z-10 hover:bg-gray-100"
@@ -201,7 +218,7 @@ const HomePage = () => {
         )}
       </div>
 
-      {/* The Best of Live Events / Categories */}
+      {/* Categories / Clubs */}
       <div
         className="py-8 px-4 sm:px-6"
         style={{ background: "linear-gradient(to right, #2E005F, #5B00B7, #7E00E0)" }}
@@ -263,11 +280,19 @@ const HomePage = () => {
       {/* Trending Now */}
       {events.length > 0 && (
         <div className="mt-10 px-6 mb-10">
-          <h2 className="text-black text-2xl sm:text-3xl font-bold mb-4">🔥Trending Now</h2>
+          <h2 className="text-black text-2xl sm:text-3xl font-bold mb-4">
+            🔥Trending Now
+          </h2>
           <div className="relative w-full h-80 overflow-hidden rounded-2xl shadow-lg">
-            <img src={events[0].image || bg1} alt={events[0].title} className="w-full h-full object-cover" />
+            <img
+              src={events[0].image || bg1}
+              alt={events[0].title}
+              className="w-full h-full object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent flex flex-col justify-center p-8">
-              <h2 className="text-3xl font-bold text-white mb-3">{events[0].title || "Trending Event"}</h2>
+              <h2 className="text-3xl font-bold text-white mb-3">
+                {events[0].title || "Trending Event"}
+              </h2>
               <p className="text-gray-200 text-sm mb-4">
                 📅 {events[0].date ? new Date(events[0].date).toLocaleDateString() : "Date TBA"} •{" "}
                 {events[0].city || "Location TBA"}{" "}

@@ -7,59 +7,77 @@ const IndividualPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/events/${id}`);
-        
-        setEvent(res.data.data);
-        setLoading(false);
+        console.log("Fetching event from:", `${API_BASE_URL}/api/events/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/api/events/${id}`);
+        console.log("✅ Event fetched:", res.data);
+
+        setEvent(res.data.data || res.data || null);
       } catch (error) {
         console.error("❌ Error fetching event:", error);
+      } finally {
         setLoading(false);
       }
     };
     fetchEvent();
   }, [id]);
 
-  if (loading) return <div className="text-center py-10">Loading event...</div>;
-  if (!event) return <div className="text-center py-10">Event not found</div>;
+  if (loading)
+    return <div className="text-center py-10">Loading event...</div>;
+  if (!event)
+    return <div className="text-center py-10">Event not found</div>;
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
-      {/* Event Banner and Info */}
+      {/* Event Banner */}
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden mb-12">
-        <img
-          src={event.image}
-          alt={event.title}
-          className="w-full h-96 object-cover"
-        />
+        {event.image && (
+          <img
+            src={event.image}
+            alt={event.title}
+            className="w-full h-96 object-cover"
+          />
+        )}
         <div className="p-6">
           <h1 className="text-4xl font-bold mb-4">{event.title}</h1>
 
           {/* Highlights */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {event.highlights.map((tag, idx) => (
-              <span
-                key={idx}
-                className="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          {event.highlights?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {event.highlights.map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Date, Time, Location */}
           <div className="text-gray-700 mb-6 space-y-1">
-            <p>
-              <strong>Date:</strong> {event.date}
-            </p>
-            <p>
-              <strong>Time:</strong> {event.time}
-            </p>
-            <p>
-              <strong>Location:</strong> {event.location}
-            </p>
+            {event.date && (
+              <p>
+                <strong>Date:</strong>{" "}
+                {new Date(event.date).toLocaleDateString()}
+              </p>
+            )}
+            {event.time && (
+              <p>
+                <strong>Time:</strong> {event.time}
+              </p>
+            )}
+            {event.location && (
+              <p>
+                <strong>Location:</strong> {event.location}
+              </p>
+            )}
           </div>
 
           {/* Buttons */}
@@ -75,23 +93,29 @@ const IndividualPage = () => {
       </div>
 
       {/* About Section */}
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 mb-12">
-        <h2 className="text-2xl font-semibold mb-4">About the Event</h2>
-        <p className="text-gray-600 leading-relaxed">{event.description}</p>
-      </div>
+      {event.description && (
+        <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 mb-12">
+          <h2 className="text-2xl font-semibold mb-4">About the Event</h2>
+          <p className="text-gray-600 leading-relaxed">{event.description}</p>
+        </div>
+      )}
 
       {/* Organizer Info */}
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 flex items-center gap-4 mb-12">
-        <img
-          src={event.organizerLogo}
-          alt="Organizer"
-          className="w-16 h-16 rounded-full object-cover"
-        />
-        <div>
-          <h3 className="font-bold text-lg">{event.organizerName}</h3>
-          <p className="text-gray-600">Leading event organizer</p>
+      {(event.organizerName || event.organizerLogo) && (
+        <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-6 flex items-center gap-4 mb-12">
+          {event.organizerLogo && (
+            <img
+              src={event.organizerLogo}
+              alt="Organizer"
+              className="w-16 h-16 rounded-full object-cover"
+            />
+          )}
+          <div>
+            <h3 className="font-bold text-lg">{event.organizerName || "Organizer"}</h3>
+            <p className="text-gray-600">Leading event organizer</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Cast Members */}
       {event.castMembers?.length > 0 && (
