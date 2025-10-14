@@ -7,16 +7,21 @@ const BookTicketPage = () => {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [contact, setContact] = useState({ phone: "" });
   const [numberEntered, setNumberEntered] = useState(false);
   const [donate, setDonate] = useState(false);
 
+  // ✅ Use env-based API URL (works on localhost + production)
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/events/${id}`);
-        setEvent(res.data.data || res.data);
+        console.log("Fetching event from:", `${API_BASE_URL}/api/events/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/api/events/${id}`);
+        console.log("✅ Event fetched:", res.data);
+        setEvent(res.data.data || res.data || null);
       } catch (error) {
         console.error("❌ Error fetching event:", error);
       } finally {
@@ -24,7 +29,7 @@ const BookTicketPage = () => {
       }
     };
     fetchEvent();
-  }, [id]);
+  }, [id, API_BASE_URL]);
 
   const handleContactChange = (e) => {
     const { value } = e.target;
@@ -44,12 +49,12 @@ const BookTicketPage = () => {
     setNumberEntered(true);
   };
 
-  const handleChangeNumber = () => {
-    setNumberEntered(false);
-  };
+  const handleChangeNumber = () => setNumberEntered(false);
 
   const handleSupportClick = () => {
-    alert("📩 Our team will check and contact you shortly regarding your payment confirmation.");
+    alert(
+      "📩 Our team will check and contact you shortly regarding your payment confirmation."
+    );
   };
 
   if (loading) return <div className="text-center py-10">⏳ Loading event details...</div>;
@@ -57,7 +62,7 @@ const BookTicketPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center py-8 px-4">
-      <div className="max-w-6xl w-full flex gap-6">
+      <div className="max-w-6xl w-full flex flex-col md:flex-row gap-6">
         {/* LEFT SIDE */}
         <div className="flex-1 space-y-4">
           {/* Contact Section */}
@@ -65,14 +70,14 @@ const BookTicketPage = () => {
             <div className="bg-red-500 text-white px-4 py-2 font-semibold">
               Share your Contact Details in order to Pay
             </div>
-            <div className="p-4 flex gap-3 items-center flex-wrap">
+            <div className="p-4 flex flex-wrap gap-3 items-center">
               <input
                 name="phone"
                 value={contact.phone}
                 onChange={handleContactChange}
                 placeholder="Enter your mobile number"
                 readOnly={numberEntered}
-                className={`w-96 border border-gray-300 rounded px-3 py-2 focus:outline-none ${
+                className={`w-full sm:w-96 border border-gray-300 rounded px-3 py-2 focus:outline-none ${
                   numberEntered ? "bg-gray-100 cursor-not-allowed" : "focus:ring-1 focus:ring-red-400"
                 }`}
               />
@@ -93,13 +98,13 @@ const BookTicketPage = () => {
                 </button>
               )}
 
-              <p className="text-sm text-gray-500 ml-2">
+              <p className="text-sm text-gray-500 w-full">
                 Use your mobile number you provided above to complete the payment.
               </p>
             </div>
           </div>
 
-          {/* ✅ UPI Payment Section (Visible only after valid number) */}
+          {/* ✅ UPI Payment Section */}
           {numberEntered && (
             <div className="bg-white rounded shadow p-6 text-center">
               <h3 className="font-semibold mb-4">Pay via UPI</h3>
@@ -113,10 +118,10 @@ const BookTicketPage = () => {
                 linked to your mobile number that you entered.
               </p>
               <p className="text-sm text-gray-600 mt-4">
-                After paying the amount, you will receive a confirmation message on your
-                mobile number within <span className="font-semibold">24 hours</span>.{" "}
+                After paying the amount, you’ll receive a confirmation message within{" "}
+                <span className="font-semibold">24 hours</span>.{" "}
                 <br />
-                If not recieved any message,{" "}
+                If you haven’t received any message,{" "}
                 <button
                   onClick={handleSupportClick}
                   className="text-blue-600 underline hover:text-blue-800"
@@ -131,13 +136,19 @@ const BookTicketPage = () => {
 
         {/* RIGHT SIDE (Order Summary) */}
         {numberEntered && (
-          <div className="w-80 bg-white rounded shadow p-4">
+          <div className="w-full md:w-80 bg-white rounded shadow p-4">
             <h3 className="font-semibold mb-4">ORDER SUMMARY</h3>
             <div className="mb-4 text-sm">
               <p className="font-semibold">{event.title || event.name}</p>
               <p>{event.location}</p>
-              <p>{event.date} — {event.time}</p>
+              <p>
+                {event.date
+                  ? new Date(event.date).toLocaleDateString()
+                  : "Date not available"}{" "}
+                — {event.time || "Time not available"}
+              </p>
             </div>
+
             <div className="flex justify-between border-t border-gray-200 pt-2 text-sm">
               <span>Sub Total</span>
               <span>Rs. {event.price || 400}.00</span>
@@ -154,6 +165,7 @@ const BookTicketPage = () => {
                 onChange={() => setDonate(!donate)}
               />
             </div>
+
             <div className="mt-4 border-t border-gray-200 pt-2 font-bold flex justify-between">
               <span>Amount Payable</span>
               <span>
