@@ -25,6 +25,7 @@ import {
   CheckCheck,
   Home,
   Trash2,
+  ArrowLeft,
 } from "lucide-react";
 
 export default function ChatPage() {
@@ -38,12 +39,11 @@ export default function ChatPage() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [searchInChat, setSearchInChat] = useState("");
-  const [showChatSearch, setShowChatSearch] = useState(false);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // ✅ Load chats from localStorage OR fetch from backend if not available
+  // ✅ Load chats
   useEffect(() => {
     const savedChats = localStorage.getItem("chats");
     if (savedChats) {
@@ -83,21 +83,16 @@ export default function ChatPage() {
           }));
 
           setChats(mappedChats);
-          if (mappedChats.length > 0) setSelectedId(mappedChats[0].id);
         } catch (err) {
           console.error("Error fetching colleges:", err);
         }
       };
-
       fetchColleges();
     }
   }, []);
 
-  // ✅ Save chats to localStorage whenever they change
   useEffect(() => {
-    if (chats.length > 0) {
-      localStorage.setItem("chats", JSON.stringify(chats));
-    }
+    if (chats.length > 0) localStorage.setItem("chats", JSON.stringify(chats));
   }, [chats]);
 
   const selectedChat = chats.find((c) => c.id === selectedId);
@@ -115,10 +110,10 @@ export default function ChatPage() {
 
   const handleSend = () => {
     if (!message.trim() || !selectedChat) return;
-
-    // current logged-in user
-    const currentUser = localStorage.getItem("studentName") || localStorage.getItem("studentId") || "Anonymous";
-
+    const currentUser =
+      localStorage.getItem("studentName") ||
+      localStorage.getItem("studentId") ||
+      "Anonymous";
     const newMessage = {
       id: Date.now(),
       from: currentUser,
@@ -130,7 +125,6 @@ export default function ChatPage() {
       date: "Today",
       status: "sent",
     };
-
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === selectedId
@@ -141,36 +135,21 @@ export default function ChatPage() {
     setMessage("");
   };
 
-  // ✅ Delete message and persist
   const handleDeleteMessage = (chatId, msgId) => {
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === chatId
-          ? {
-              ...chat,
-              messages: chat.messages.filter((msg) => msg.id !== msgId),
-            }
+          ? { ...chat, messages: chat.messages.filter((m) => m.id !== msgId) }
           : chat
       )
     );
   };
 
-  // ✅ Scroll to bottom on new messages
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (messagesEndRef.current)
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
   }, [selectedChat?.messages]);
 
-  const handleScroll = () => {
-    if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        messagesContainerRef.current;
-      setShowScrollBtn(scrollTop < scrollHeight - clientHeight - 50);
-    }
-  };
-
-  // ✅ toggle pin, mute, favorite
   const toggleChatProp = (id, prop) => {
     setChats((prev) =>
       prev.map((chat) =>
@@ -179,19 +158,25 @@ export default function ChatPage() {
     );
   };
 
+  // ✅ Back button for mobile
+  const handleBack = () => {
+    setSelectedId(null);
+  };
+
   return (
     <div
-      className={`flex h-screen overflow-hidden relative pr-4 ${
+      className={`flex h-screen overflow-hidden relative ${
         darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
       }`}
     >
-      {/* Sidebar */}
+      {/* ✅ Sidebar (chat list) */}
       <div
-        className={`w-100 shrink-0 border-r ${
+        className={`flex flex-col w-full md:w-1/3 border-r transition-transform duration-300 ${
           darkMode ? "border-gray-800" : "border-gray-200"
-        } flex flex-col`}
+        } ${
+          selectedId ? "translate-x-[-100%] md:translate-x-0" : "translate-x-0"
+        } md:static absolute inset-0 z-10 bg-inherit`}
       >
-        {/* Header */}
         <div className="px-4 py-3 flex justify-between items-center">
           <h2 className="text-lg font-semibold">Chats</h2>
           <div className="flex gap-2">
@@ -204,7 +189,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Search */}
         <div className="px-3 pb-2">
           <div
             className={`flex items-center px-2 py-1.5 rounded-md ${
@@ -223,12 +207,11 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex px-3 gap-4 text-xs font-medium border-b border-gray-700/30">
+        <div className="flex px-3 gap-4 text-xs font-medium border-b border-gray-700/30 overflow-x-auto">
           {["All", "Unread", "Pinned", "Favorites"].map((tab) => (
             <button
               key={tab}
-              className={`py-2 ${
+              className={`py-2 whitespace-nowrap ${
                 activeTab === tab
                   ? "border-b-2 border-purple-500 text-purple-500"
                   : "text-gray-500"
@@ -240,7 +223,6 @@ export default function ChatPage() {
           ))}
         </div>
 
-        {/* Chat List */}
         <div className="flex-1 overflow-y-auto">
           {filteredChats.map((chat) => (
             <div
@@ -284,17 +266,28 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Chat Window */}
-      <div className="flex-1 flex flex-col">
+      {/* ✅ Chat Window */}
+      <div
+        className={`flex-1 flex flex-col absolute inset-0 md:static transition-transform duration-300 ${
+          selectedId ? "translate-x-0" : "translate-x-full md:translate-x-0"
+        } bg-inherit`}
+      >
         {selectedChat ? (
           <>
-            {/* Chat Header */}
+            {/* Header */}
             <div
               className={`px-4 py-3 flex justify-between items-center border-b ${
                 darkMode ? "border-gray-800" : "border-gray-200"
               }`}
             >
               <div className="flex items-center gap-3">
+                {/* ✅ Back Button for mobile */}
+                <button
+                  onClick={handleBack}
+                  className="md:hidden mr-2 text-gray-400 hover:text-white"
+                >
+                  <ArrowLeft size={18} />
+                </button>
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
                     darkMode ? "bg-gray-700" : "bg-gray-200"
@@ -329,10 +322,10 @@ export default function ChatPage() {
                     <Star size={16} />
                   )}
                 </button>
-                <button>
+                <button className="hidden sm:block">
                   <Phone size={16} />
                 </button>
-                <button>
+                <button className="hidden sm:block">
                   <Video size={16} />
                 </button>
                 <button>
@@ -344,89 +337,65 @@ export default function ChatPage() {
             {/* Messages */}
             <div
               className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
-              onScroll={handleScroll}
               ref={messagesContainerRef}
             >
-              {selectedChat.messages
-                .filter((msg) =>
-                  searchInChat
-                    ? msg.text
-                        .toLowerCase()
-                        .includes(searchInChat.toLowerCase())
-                    : true
-                )
-                .map((msg) => {
-                  const currentUser =
-                    localStorage.getItem("studentName") || localStorage.getItem("studentId") || "Anonymous";
-                  const isMyMessage = msg.from === currentUser;
-
-                  return (
+              {selectedChat.messages.map((msg) => {
+                const currentUser =
+                  localStorage.getItem("studentName") ||
+                  localStorage.getItem("studentId") ||
+                  "Anonymous";
+                const isMyMessage = msg.from === currentUser;
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col group ${
+                      isMyMessage ? "items-end" : "items-start"
+                    }`}
+                  >
+                    {!isMyMessage && (
+                      <span className="text-xs text-gray-500 mb-1 px-2">
+                        {msg.from}
+                      </span>
+                    )}
                     <div
-                      key={msg.id}
-                      className={`flex flex-col group ${
-                        isMyMessage ? "items-end" : "items-start"
+                      className={`relative max-w-[80%] sm:max-w-xs px-3 py-2 rounded-lg text-sm ${
+                        isMyMessage
+                          ? "bg-purple-500 text-white rounded-br-sm"
+                          : darkMode
+                          ? "bg-gray-700 text-gray-100 rounded-bl-sm"
+                          : "bg-gray-200 text-gray-900 rounded-bl-sm"
                       }`}
                     >
-                      {/* Show sender name for other people's messages */}
-                      {!isMyMessage && (
-                        <span className="text-xs text-gray-500 mb-1 px-2">
-                          {msg.from}
-                        </span>
-                      )}
-                      
+                      {msg.text}
                       <div
-                        className={`relative max-w-xs px-3 py-2 rounded-lg text-sm ${
-                          isMyMessage
-                            ? "bg-purple-500 text-white rounded-br-sm"
-                            : darkMode
-                            ? "bg-gray-700 text-gray-100 rounded-bl-sm"
-                            : "bg-gray-200 text-gray-900 rounded-bl-sm"
+                        className={`text-[10px] opacity-70 mt-1 ${
+                          isMyMessage ? "text-right" : "text-left"
                         }`}
                       >
-                        {msg.text}
-                        <div className={`text-[10px] opacity-70 mt-1 ${
-                          isMyMessage ? "text-right" : "text-left"
-                        }`}>
-                          {msg.time}{" "}
-                          {isMyMessage &&
-                            (msg.status === "sent" ? (
-                              <Check size={11} className="inline ml-1" />
-                            ) : msg.status === "delivered" ? (
-                              <CheckCheck size={11} className="inline ml-1" />
-                            ) : null)}
-                        </div>
-
-                        {/* ✅ Delete button */}
-                        {isMyMessage && (
-                          <button
-                            onClick={() =>
-                              handleDeleteMessage(selectedChat.id, msg.id)
-                            }
-                            className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
+                        {msg.time}{" "}
+                        {isMyMessage &&
+                          (msg.status === "sent" ? (
+                            <Check size={11} className="inline ml-1" />
+                          ) : msg.status === "delivered" ? (
+                            <CheckCheck size={11} className="inline ml-1" />
+                          ) : null)}
                       </div>
+                      {isMyMessage && (
+                        <button
+                          onClick={() =>
+                            handleDeleteMessage(selectedChat.id, msg.id)
+                          }
+                          className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Scroll Down Button */}
-            {showScrollBtn && (
-              <button
-                className="absolute bottom-40 right-6 p-2 bg-black text-white rounded-full shadow-lg"
-                onClick={() =>
-                  messagesEndRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                  })
-                }
-              >
-                <ArrowDown size={18} />
-              </button>
-            )}
 
             {/* Input */}
             <div
@@ -463,13 +432,13 @@ export default function ChatPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 hidden md:flex items-center justify-center">
             <p className="text-gray-500">Select a chat to start messaging</p>
           </div>
         )}
       </div>
 
-      {/* ✅ Floating Home Button */}
+      {/* Floating Home */}
       <Link
         to="/"
         className="fixed bottom-14 right-7 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-all duration-300 z-50"
