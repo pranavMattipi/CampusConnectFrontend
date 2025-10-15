@@ -1,4 +1,3 @@
-// frontend/pages/PostEventPage.jsx
 import React, { useState } from "react";
 import axios from "axios";
 
@@ -7,7 +6,7 @@ const PostEventPage = () => {
     title: "",
     description: "",
     image: "",
-    qrImage: "", // ✅ New QR image field
+    qrImage: "",
     date: "",
     time: "",
     location: "",
@@ -16,21 +15,21 @@ const PostEventPage = () => {
     organizerLogo: "",
     price: "",
     castMembers: "",
-    college: "", // new
-    city: "",    // new
+    college: "",
+    city: "",
+    phoneNumber: "", // ✅ Added this new field
   });
 
-  const [errors, setErrors] = useState({}); // Store validation errors
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setErrors({ ...errors, [e.target.name]: "" }); // Clear error when typing
+    setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  // Image file upload (main image)
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -47,14 +46,13 @@ const PostEventPage = () => {
         ...prev,
         image: res.data.imageUrl,
       }));
-      alert("Main image uploaded successfully!");
+      alert("✅ Main image uploaded successfully!");
     } catch (error) {
       console.error("Image upload failed", error);
-      alert("Failed to upload image.");
+      alert("❌ Failed to upload image.");
     }
   };
 
-  // ✅ QR image upload
   const handleQrUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -71,10 +69,10 @@ const PostEventPage = () => {
         ...prev,
         qrImage: res.data.imageUrl,
       }));
-      alert("QR Image uploaded successfully!");
+      alert("✅ QR Image uploaded successfully!");
     } catch (error) {
       console.error("QR upload failed", error);
-      alert("Failed to upload QR image.");
+      alert("❌ Failed to upload QR image.");
     }
   };
 
@@ -83,9 +81,14 @@ const PostEventPage = () => {
 
     let validationErrors = {};
 
-    // Validate title length
     if (formData.title.trim().length < 25) {
       validationErrors.title = "Title must be at least 25 characters long.";
+    }
+
+    // ✅ Validate phone number (10 digits, starts with 6–9)
+    if (!/^[6-9]\d{9}$/.test(formData.phoneNumber)) {
+      alert("⚠️ Please enter a valid 10-digit phone number starting with 6–9 (no +91 or spaces).");
+      return;
     }
 
     if (Object.keys(validationErrors).length > 0) {
@@ -115,11 +118,11 @@ const PostEventPage = () => {
 
     try {
       const res = await axios.post("http://localhost:8000/api/events", eventData);
-      alert("Event created successfully!");
+      alert("✅ Event created successfully!");
       console.log(res.data);
     } catch (error) {
       console.error("Error creating event:", error.response?.data || error.message);
-      alert("Failed to create event.");
+      alert("❌ Failed to create event.");
     }
   };
 
@@ -285,6 +288,17 @@ const PostEventPage = () => {
           value={formData.castMembers}
           onChange={handleChange}
           className="border p-2 w-full"
+        />
+
+        {/* ✅ Added Payment Phone Number Input */}
+        <input
+          type="text"
+          name="phoneNumber"
+          placeholder="Payment Phone Number"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          className="border p-2 w-full"
+          required
         />
 
         <button
