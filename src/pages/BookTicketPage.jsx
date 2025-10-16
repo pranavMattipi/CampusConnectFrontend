@@ -113,6 +113,7 @@ const BookTicketPage = () => {
                 alt="UPI QR"
                 className="w-48 h-48 mx-auto mb-4 rounded shadow"
               />
+              <p className="text-2xl font-bold">OR</p>
               
               {/* ✅ Payment Phone Number Below QR */}
               {event.phoneNumber && (
@@ -120,6 +121,7 @@ const BookTicketPage = () => {
                   Payment Number: {event.phoneNumber}
                 </p>
               )}
+
 
               <p className="text-sm text-gray-500 mb-2">
                 Scan this QR using any UPI app (PhonePe, GPay, Paytm, BHIM, etc.)
