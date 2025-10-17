@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const IndividualPage = () => {
   const { id } = useParams();
@@ -16,7 +18,6 @@ const IndividualPage = () => {
         console.log("Fetching event from:", `${API_BASE_URL}/api/events/${id}`);
         const res = await axios.get(`${API_BASE_URL}/api/events/${id}`);
         console.log("✅ Event fetched:", res.data);
-
         setEvent(res.data.data || res.data || null);
       } catch (error) {
         console.error("❌ Error fetching event:", error);
@@ -32,8 +33,26 @@ const IndividualPage = () => {
   if (!event)
     return <div className="text-center py-10">Event not found</div>;
 
+  // ✅ Function to handle share
+  const handleShare = async () => {
+    try {
+      const eventLink = `${window.location.origin}/Individual/${event._id}`;
+      await navigator.clipboard.writeText(eventLink);
+      toast.success("✅ Link copied to clipboard!", {
+        position: "bottom-center",
+        autoClose: 2000,
+      });
+    } catch (error) {
+      toast.error("❌ Failed to copy link!");
+      console.error("Clipboard error:", error);
+    }
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen p-6">
+      {/* Toast container */}
+      <ToastContainer />
+
       {/* Event Banner */}
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden mb-12">
         {event.image && (
@@ -43,6 +62,7 @@ const IndividualPage = () => {
             className="w-full h-96 object-cover"
           />
         )}
+
         <div className="p-6">
           <h1 className="text-4xl font-bold mb-4">{event.title}</h1>
 
@@ -88,6 +108,13 @@ const IndividualPage = () => {
             >
               🎟 Book Tickets
             </Link>
+
+            <button
+              onClick={handleShare}
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition"
+            >
+              📢 Share
+            </button>
           </div>
         </div>
       </div>
@@ -111,7 +138,9 @@ const IndividualPage = () => {
             />
           )}
           <div>
-            <h3 className="font-bold text-lg">{event.organizerName || "Organizer"}</h3>
+            <h3 className="font-bold text-lg">
+              {event.organizerName || "Organizer"}
+            </h3>
             <p className="text-gray-600">Leading event organizer</p>
           </div>
         </div>
