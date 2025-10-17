@@ -14,26 +14,20 @@ const PostEventPage = () => {
     organizerName: "",
     organizerLogo: "",
     price: "",
-    castMembers: "",
     college: "",
     city: "",
     phoneNumber: "",
   });
 
+  const [castMembers, setCastMembers] = useState([]);
   const [errors, setErrors] = useState({});
   const [isLocalhost, setIsLocalhost] = useState(true);
 
   useEffect(() => {
-    // ✅ Detect if running on localhost
     const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      setIsLocalhost(true);
-    } else {
-      setIsLocalhost(false);
-    }
+    setIsLocalhost(hostname === "localhost" || hostname === "127.0.0.1");
   }, []);
 
-  // 🚫 If not localhost, show access denied message
   if (!isLocalhost) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -52,7 +46,7 @@ const PostEventPage = () => {
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = async (e, key) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -66,16 +60,23 @@ const PostEventPage = () => {
 
       setFormData((prev) => ({
         ...prev,
-        image: res.data.imageUrl,
+        [key]: res.data.imageUrl,
       }));
-      alert("✅ Main image uploaded successfully!");
+
+      alert(`✅ ${key} uploaded successfully!`);
     } catch (error) {
-      console.error("Image upload failed", error);
-      alert("❌ Failed to upload image.");
+      console.error(`${key} upload failed`, error);
+      alert(`❌ Failed to upload ${key}.`);
     }
   };
 
-  const handleQrUpload = async (e) => {
+  const handleCastChange = (index, field, value) => {
+    const updated = [...castMembers];
+    updated[index][field] = value;
+    setCastMembers(updated);
+  };
+
+  const handleCastImageUpload = async (e, index) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -87,29 +88,37 @@ const PostEventPage = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setFormData((prev) => ({
-        ...prev,
-        qrImage: res.data.imageUrl,
-      }));
-      alert("✅ QR Image uploaded successfully!");
+      const updated = [...castMembers];
+      updated[index].img = res.data.imageUrl;
+      setCastMembers(updated);
+
+      alert(`✅ Cast member ${index + 1} image uploaded successfully!`);
     } catch (error) {
-      console.error("QR upload failed", error);
-      alert("❌ Failed to upload QR image.");
+      console.error("Cast image upload failed", error);
+      alert("❌ Failed to upload cast image.");
     }
+  };
+
+  const addCastMember = () => {
+    setCastMembers([...castMembers, { name: "", img: "" }]);
+  };
+
+  const removeCastMember = (index) => {
+    const updated = [...castMembers];
+    updated.splice(index, 1);
+    setCastMembers(updated);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     let validationErrors = {};
-
     if (formData.title.trim().length < 25) {
       validationErrors.title = "Title must be at least 25 characters long.";
     }
 
-    // ✅ Validate phone number (10 digits, starts with 6–9)
     if (!/^[6-9]\d{9}$/.test(formData.phoneNumber)) {
-      alert("⚠️ Please enter a valid 10-digit phone number starting with 6–9 (no +91 or spaces).");
+      alert("⚠️ Please enter a valid 10-digit phone number starting with 6–9.");
       return;
     }
 
@@ -123,19 +132,11 @@ const PostEventPage = () => {
       .map((item) => item.trim())
       .filter((item) => item);
 
-    const castMembersArray = formData.castMembers
-      .split(",")
-      .map((item) => {
-        const [name, img] = item.split("|").map((v) => v.trim());
-        return { name, img };
-      })
-      .filter((cm) => cm.name && cm.img);
-
     const eventData = {
       ...formData,
       price: Number(formData.price),
       highlights: highlightsArray,
-      castMembers: castMembersArray,
+      castMembers,
     };
 
     try {
@@ -152,7 +153,7 @@ const PostEventPage = () => {
     <div className="max-w-2xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Post Event</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title input */}
+        {/* Title */}
         <div>
           <input
             type="text"
@@ -162,11 +163,10 @@ const PostEventPage = () => {
             onChange={handleChange}
             className={`border p-2 w-full ${errors.title ? "border-red-500" : ""}`}
           />
-          {errors.title && (
-            <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-          )}
+          {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
         </div>
 
+        {/* Description */}
         <input
           type="text"
           name="description"
@@ -176,45 +176,59 @@ const PostEventPage = () => {
           className="border p-2 w-full"
         />
 
-        {/* Main Image upload */}
+        {/* Main Image */}
         <div>
-          <input
-            type="text"
-            name="image"
-            placeholder="Main Image URL"
-            value={formData.image}
-            onChange={handleChange}
-            className="border p-2 w-full mb-2"
-          />
+          <label className="block font-semibold mb-1">Main Event Image:</label>
           <input
             type="file"
             accept="image/*"
-            onChange={handleImageUpload}
+            onChange={(e) => handleImageUpload(e, "image")}
             className="border p-2 w-full"
           />
           {formData.image && (
             <img
               src={formData.image}
-              alt="Preview"
+              alt="Event Preview"
               className="mt-2 w-32 h-32 object-cover rounded"
             />
           )}
         </div>
 
-        {/* QR Upload */}
+        {/* Organizer Name */}
+        <input
+          type="text"
+          name="organizerName"
+          placeholder="Organizer Name"
+          value={formData.organizerName}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+
+        {/* ✅ Organizer Logo (Placed below organizer name) */}
         <div>
-          <input
-            type="text"
-            name="qrImage"
-            placeholder="QR Image URL"
-            value={formData.qrImage}
-            onChange={handleChange}
-            className="border p-2 w-full mb-2"
-          />
+          <label className="block font-semibold mb-1">Organizer Logo:</label>
           <input
             type="file"
             accept="image/*"
-            onChange={handleQrUpload}
+            onChange={(e) => handleImageUpload(e, "organizerLogo")}
+            className="border p-2 w-full"
+          />
+          {formData.organizerLogo && (
+            <img
+              src={formData.organizerLogo}
+              alt="Organizer Logo"
+              className="mt-2 w-24 h-24 object-cover rounded"
+            />
+          )}
+        </div>
+
+        {/* ✅ Payment QR Image */}
+        <div>
+          <label className="block font-semibold mb-1">Payment QR:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleImageUpload(e, "qrImage")}
             className="border p-2 w-full"
           />
           {formData.qrImage && (
@@ -226,20 +240,117 @@ const PostEventPage = () => {
           )}
         </div>
 
-        <input type="date" name="date" value={formData.date} onChange={handleChange} className="border p-2 w-full" />
-        <input type="time" name="time" value={formData.time} onChange={handleChange} className="border p-2 w-full" />
-        <input type="text" name="location" placeholder="Location" value={formData.location} onChange={handleChange} className="border p-2 w-full" />
+        {/* Other Fields */}
+        <input
+          type="date"
+          name="date"
+          value={formData.date}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="time"
+          name="time"
+          value={formData.time}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="text"
+          name="location"
+          placeholder="Location"
+          value={formData.location}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="text"
+          name="college"
+          placeholder="College"
+          value={formData.college}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="text"
+          name="city"
+          placeholder="City"
+          value={formData.city}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="text"
+          name="highlights"
+          placeholder="Highlights (comma separated)"
+          value={formData.highlights}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="number"
+          name="price"
+          placeholder="Ticket Price"
+          value={formData.price}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
 
-        <input type="text" name="college" placeholder="College" value={formData.college} onChange={handleChange} className="border p-2 w-full" />
-        <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 w-full" />
+        {/* ✅ Cast Members */}
+        <div className="border p-3 rounded bg-gray-50">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold text-lg">Cast Members</h3>
+            <button
+              type="button"
+              onClick={addCastMember}
+              className="bg-green-500 text-white px-3 py-1 rounded"
+            >
+              + Add
+            </button>
+          </div>
 
-        <input type="text" name="highlights" placeholder="Highlights (comma separated)" value={formData.highlights} onChange={handleChange} className="border p-2 w-full" />
-        <input type="text" name="organizerName" placeholder="Organizer Name" value={formData.organizerName} onChange={handleChange} className="border p-2 w-full" />
-        <input type="text" name="organizerLogo" placeholder="Organizer Logo URL" value={formData.organizerLogo} onChange={handleChange} className="border p-2 w-full" />
+          {castMembers.map((cast, index) => (
+            <div key={index} className="border p-2 mb-3 rounded">
+              <input
+                type="text"
+                placeholder="Cast Name"
+                value={cast.name}
+                onChange={(e) => handleCastChange(index, "name", e.target.value)}
+                className="border p-2 w-full mb-2"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleCastImageUpload(e, index)}
+                className="border p-2 w-full"
+              />
+              {cast.img && (
+                <img
+                  src={cast.img}
+                  alt={cast.name}
+                  className="mt-2 w-24 h-24 object-cover rounded"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => removeCastMember(index)}
+                className="mt-2 bg-red-500 text-white px-3 py-1 rounded"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
 
-        <input type="number" name="price" placeholder="Ticket Price" value={formData.price} onChange={handleChange} className="border p-2 w-full" />
-        <input type="text" name="castMembers" placeholder="Cast Members (name|img, name|img)" value={formData.castMembers} onChange={handleChange} className="border p-2 w-full" />
-        <input type="text" name="phoneNumber" placeholder="Payment Phone Number" value={formData.phoneNumber} onChange={handleChange} className="border p-2 w-full" required />
+        <input
+          type="text"
+          name="phoneNumber"
+          placeholder="Payment Phone Number"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          className="border p-2 w-full"
+          required
+        />
 
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
           Create Event
